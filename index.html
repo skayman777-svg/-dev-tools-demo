@@ -1,388 +1,416 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DevTools — Enterprise Analytics & Automation</title>
-<style>
-    :root {
-        --bg-base: #08090d;
-        --bg-surface: rgba(18, 20, 32, 0.7);
-        --bg-surface-hover: rgba(26, 29, 46, 0.8);
-        --border-light: rgba(255, 255, 255, 0.06);
-        --border-highlight: rgba(0, 240, 255, 0.25);
-        --text-primary: #f0f2f8;
-        --text-secondary: #8a8fad;
-        --text-muted: #535775;
-        --accent-cyan: #00d2ff;
-        --accent-purple: #9d4edd;
-        --accent-green: #00e676;
-        --accent-red: #ff3b5c;
-        --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        --font-mono: "SF Mono", "Fira Code", "Roboto Mono", monospace;
-        --radius-lg: 16px;
-        --radius-md: 10px;
-        --shadow-glow: 0 0 40px rgba(0, 210, 255, 0.08);
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEXUS // System Interface</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #020205;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #ffffff;
+            user-select: none;
+        }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-        font-family: var(--font-main);
-        background-color: var(--bg-base);
-        color: var(--text-primary);
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        -webkit-font-smoothing: antialiased;
-        overflow: hidden;
-        position: relative;
-    }
+        /* 3D Канвас */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
 
-    /* Фоновые неоновые пятна */
-    body::before, body::after {
-        content: ''; position: absolute; border-radius: 50%; filter: blur(100px); z-index: -1; opacity: 0.4;
-    }
-    body::before { background: var(--accent-purple); width: 600px; height: 600px; top: -200px; left: -200px; }
-    body::after { background: var(--accent-cyan); width: 500px; height: 500px; bottom: -150px; right: -100px; opacity: 0.2; }
+        /* UI Оверлей (как на PS5) */
+        .ui-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none; /* Пропускает клики к 3D сцене */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+            box-sizing: border-box;
+            background: radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.8) 100%);
+        }
 
-    /* Шапка */
-    header {
-        background: rgba(8, 9, 13, 0.8);
-        backdrop-filter: blur(20px);
-        border-bottom: 1px solid var(--border-light);
-        padding: 0 32px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        height: 72px;
-        position: relative;
-        z-index: 10;
-    }
-    .logo {
-        font-weight: 600; font-size: 16px; letter-spacing: -0.5px;
-        display: flex; align-items: center; gap: 12px;
-    }
-    .logo svg { width: 24px; height: 24px; fill: var(--accent-cyan); }
-    
-    .tabs { display: flex; gap: 4px; background: rgba(255,255,255,0.03); padding: 4px; border-radius: var(--radius-md); border: 1px solid var(--border-light); }
-    .tab {
-        background: none; border: none; color: var(--text-secondary);
-        font-size: 13px; font-weight: 500; padding: 8px 20px; border-radius: 6px;
-        cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .tab:hover { color: var(--text-primary); background: rgba(255,255,255,0.04); }
-    .tab.active { background: rgba(0, 210, 255, 0.1); color: var(--accent-cyan); box-shadow: inset 0 0 0 1px rgba(0, 210, 255, 0.2); }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            opacity: 0;
+            animation: fadeIn 2s forwards 1s;
+        }
 
-    /* Контент */
-    main {
-        flex: 1; padding: 32px; display: none; overflow-y: auto;
-        max-width: 1400px; margin: 0 auto; width: 100%;
-    }
-    main.active { display: block; animation: fadeIn 0.4s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .logo {
+            font-size: 14px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #00f0ff;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+            font-weight: 700;
+        }
 
-    /* Сетка парсера */
-    .parser-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px; height: calc(100vh - 160px); }
-    @media (max-width: 900px) { .parser-grid { grid-template-columns: 1fr; height: auto; } }
+        .nav {
+            display: flex;
+            gap: 24px;
+            font-size: 12px;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+        }
 
-    /* Панели */
-    .panel {
-        background: var(--bg-surface);
-        backdrop-filter: blur(24px);
-        border: 1px solid var(--border-light);
-        border-radius: var(--radius-lg);
-        display: flex; flex-direction: column; overflow: hidden;
-        box-shadow: var(--shadow-glow);
-    }
-    .panel-header {
-        padding: 16px 20px; border-bottom: 1px solid var(--border-light);
-        display: flex; justify-content: space-between; align-items: center;
-        font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary);
-    }
-    .panel-header .badge { background: rgba(0, 230, 118, 0.1); color: var(--accent-green); padding: 4px 10px; border-radius: 20px; font-size: 10px; border: 1px solid rgba(0, 230, 118, 0.2); }
+        .nav span:hover {
+            color: #fff;
+            cursor: pointer;
+            pointer-events: auto;
+        }
 
-    /* Терминал */
-    .terminal {
-        flex: 1; padding: 20px; font-family: var(--font-mono); font-size: 13px;
-        line-height: 1.7; overflow-y: auto; color: #a8b2d1;
-        background: rgba(0,0,0,0.2);
-    }
-    .terminal p { margin-bottom: 6px; display: flex; gap: 8px; }
-    .log-time { color: var(--text-muted); font-size: 11px; }
-    .log-ok { color: var(--accent-green); }
-    .log-info { color: var(--accent-cyan); }
-    .log-sys { color: var(--accent-purple); }
+        .bottom-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            opacity: 0;
+            animation: fadeIn 2s forwards 1.5s;
+        }
 
-    /* Контролы */
-    .controls {
-        padding: 20px; border-top: 1px solid var(--border-light);
-        background: rgba(0,0,0,0.1);
-    }
-    .progress-track { height: 4px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; margin-bottom: 16px; }
-    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan)); transition: width 0.3s ease; }
-    
-    .btn {
-        background: var(--text-primary); color: var(--bg-base);
-        border: none; padding: 12px 24px; border-radius: 8px;
-        font-weight: 600; font-size: 13px; cursor: pointer; width: 100%;
-        transition: all 0.2s ease;
-    }
-    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(255,255,255,0.15); }
-    .btn:disabled { background: rgba(255,255,255,0.1); color: var(--text-muted); cursor: not-allowed; transform: none; box-shadow: none; }
+        .status-block {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
 
-    /* Таблица */
-    .table-container { flex: 1; overflow-y: auto; }
-    table { width: 100%; border-collapse: collapse; text-align: left; }
-    th { position: sticky; top: 0; background: rgba(18, 20, 32, 0.95); backdrop-filter: blur(10px); z-index: 2; padding: 14px 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); border-bottom: 1px solid var(--border-light); }
-    td { padding: 16px 20px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s; }
-    tr:hover td { background: rgba(255,255,255,0.02); }
-    .price { font-family: var(--font-mono); color: var(--accent-cyan); }
-    .status-pill { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; background: rgba(0, 230, 118, 0.08); color: var(--accent-green); border: 1px solid rgba(0, 230, 118, 0.15); }
+        .status-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.4);
+        }
 
-    /* Автоматизация */
-    .canvas-container {
-        position: relative; height: calc(100vh - 160px); border-radius: var(--radius-lg);
-        background: radial-gradient(circle at 50% 50%, rgba(30, 33, 50, 0.5) 0%, transparent 70%);
-        border: 1px solid var(--border-light); overflow: hidden;
-    }
-    .canvas-grid { position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px); background-size: 24px 24px; opacity: 0.5; pointer-events: none; }
-    
-    svg.connections { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-    path.conn { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 2; transition: stroke 0.3s; }
-    path.conn.active { stroke: var(--accent-cyan); stroke-dasharray: 8 8; animation: flow 1s linear infinite; }
-    @keyframes flow { to { stroke-dashoffset: -16; } }
+        .status-value {
+            font-size: 24px;
+            font-weight: 300;
+            font-family: monospace;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-    .node {
-        position: absolute; z-index: 3; transform: translate(-50%, -50%);
-        width: 140px; background: var(--bg-surface); border: 1px solid var(--border-light);
-        border-radius: var(--radius-md); padding: 16px; text-align: center;
-        backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0,0,0,0.4); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .node-icon { width: 32px; height: 32px; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: rgba(255,255,255,0.05); color: var(--text-secondary); }
-    .node-title { font-size: 12px; font-weight: 600; color: var(--text-primary); }
-    .node-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+        .status-value::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff88;
+            box-shadow: 0 0 15px #00ff88;
+            animation: pulse 2s infinite;
+        }
 
-    .node.active { border-color: var(--accent-purple); box-shadow: 0 0 30px rgba(157, 78, 221, 0.2); }
-    .node.active .node-icon { background: rgba(157, 78, 221, 0.1); color: var(--accent-purple); }
-    .node.done { border-color: var(--accent-green); box-shadow: 0 0 20px rgba(0, 230, 118, 0.1); }
-    .node.done .node-icon { background: rgba(0, 230, 118, 0.1); color: var(--accent-green); }
+        .action-btn {
+            pointer-events: auto;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 16px 40px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-radius: 40px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
 
-    .node-center { width: 160px; padding: 20px; border-color: rgba(0, 210, 255, 0.3); }
-    .node-center .node-icon { background: rgba(0, 210, 255, 0.1); color: var(--accent-cyan); }
-    .node-center.active { border-color: var(--accent-cyan); box-shadow: 0 0 40px rgba(0, 210, 255, 0.25); }
+        .action-btn:hover {
+            background: rgba(0, 240, 255, 0.1);
+            border-color: #00f0ff;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.2);
+            text-shadow: 0 0 10px #00f0ff;
+        }
 
-    .floating-controls { position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; gap: 16px; align-items: center; }
-    .auto-log {
-        position: absolute; top: 24px; left: 24px; background: rgba(0,0,0,0.5);
-        backdrop-filter: blur(10px); border: 1px solid var(--border-light);
-        padding: 10px 16px; border-radius: 8px; font-family: var(--font-mono);
-        font-size: 12px; color: var(--accent-cyan); z-index: 10;
-    }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
 
-    /* Специфичные размеры узлов */
-    .pos-tl { top: 20%; left: 20%; } .pos-tr { top: 20%; left: 80%; }
-    .pos-bl { top: 80%; left: 20%; } .pos-br { top: 80%; left: 80%; }
-    .pos-center { top: 50%; left: 50%; }
-</style>
+        /* Загрузочный экран */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: #020205;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 1s;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(0,240,255,0.1);
+            border-top-color: #00f0ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
 
-<header>
-    <div class="logo">
-        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-        DevTools<span style="color:var(--text-muted); font-weight:400;">&nbsp;/ Analytics</span>
-    </div>
-    <div class="tabs">
-        <button class="tab active" onclick="switchTab('parser', this)">Data Pipeline</button>
-        <button class="tab" onclick="switchTab('automation', this)">AI Automation</button>
-    </div>
-</header>
+    <!-- Экран загрузки -->
+    <div id="loader"><div class="spinner"></div></div>
 
-<main id="tab-parser" class="active">
-    <div class="parser-grid">
-        <div class="panel">
-            <div class="panel-header">
-                <span>System Logs</span>
-                <span class="badge">Connected</span>
-            </div>
-            <div class="terminal" id="terminal">
-                <p class="log-sys"><span class="log-time">00:00:00</span>[SYS] Environment initialized.</p>
-                <p class="log-sys"><span class="log-time">00:00:01</span>[SYS] Awaiting execution command...</p>
-            </div>
-            <div class="controls">
-                <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-                <button class="btn" id="startParseBtn" onclick="startParsing()">Initiate Data Extraction</button>
+    <!-- Слой с 3D графикой -->
+    <div id="canvas-container"></div>
+
+    <!-- Слой интерфейса -->
+    <div class="ui-layer">
+        <div class="header">
+            <div class="logo">AERO // NEXUS</div>
+            <div class="nav">
+                <span>Dashboard</span>
+                <span>Network</span>
+                <span>Settings</span>
             </div>
         </div>
 
-        <div class="panel">
-            <div class="panel-header"><span>Extracted Records</span></div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr><th>ID</th><th>Product Name</th><th>Valuation</th><th>Status</th></tr>
-                    </thead>
-                    <tbody id="dataTable">
-                        <tr><td colspan="4" style="text-align:center; padding:48px; color:var(--text-muted); font-size:13px;">No data stream detected.</td></tr>
-                    </tbody>
-                </table>
+        <div class="bottom-panel">
+            <div class="status-block">
+                <div class="status-title">Core Status</div>
+                <div class="status-value">ONLINE</div>
             </div>
+            <button class="action-btn" onclick="triggerPulse()">Initialize Sequence</button>
         </div>
     </div>
-</main>
 
-<main id="tab-automation">
-    <div class="canvas-container" id="canvas">
-        <div class="canvas-grid"></div>
-        <div class="auto-log" id="autoLog">Node graph ready.</div>
-
-        <svg class="connections">
-            <path class="conn" id="p1" d="M 50% 50% Q 35% 35% 20% 20%" />
-            <path class="conn" id="p2" d="M 50% 50% Q 65% 35% 80% 20%" />
-            <path class="conn" id="p3" d="M 50% 50% Q 35% 65% 20% 80%" />
-            <path class="conn" id="p4" d="M 50% 50% Q 65% 65% 80% 80%" />
-        </svg>
-
-        <div class="node pos-tl" id="n1">
-            <div class="node-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></div>
-            <div class="node-title">CRM Source</div>
-            <div class="node-sub">Webhook Trigger</div>
-        </div>
-        <div class="node pos-tr" id="n2">
-            <div class="node-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-            <div class="node-title">LLM Parser</div>
-            <div class="node-sub">GPT-4o Model</div>
-        </div>
-        <div class="node pos-bl" id="n3">
-            <div class="node-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
-            <div class="node-title">Data Warehouse</div>
-            <div class="node-sub">Google Sheets API</div>
-        </div>
-        <div class="node pos-br" id="n4">
-            <div class="node-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></div>
-            <div class="node-title">Alerting Bot</div>
-            <div class="node-sub">Telegram Gateway</div>
-        </div>
-        <div class="node node-center pos-center" id="nc">
-            <div class="node-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-            <div class="node-title">n8n Engine</div>
-            <div class="node-sub">Orchestrator</div>
-        </div>
-
-        <div class="floating-controls">
-            <button class="btn" id="runAutoBtn" onclick="runAutomation()" style="width: auto; padding: 12px 32px; background: var(--accent-cyan); color: #000;">Execute Workflow</button>
-        </div>
-    </div>
-</main>
-
-<script>
-    function switchTab(tabId, el) {
-        document.querySelectorAll('main').forEach(m => m.classList.remove('active'));
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById('tab-' + tabId).classList.add('active');
-        el.classList.add('active');
-    }
-
-    const timeStr = () => new Date().toISOString().slice(11, 19);
-    const products = [
-        {sku: 'PRD-810', name: 'Industrial Sensor X1', price: '¥ 124,000'},
-        {sku: 'PRD-811', name: 'Smart Valve V2', price: '¥ 34,500'},
-        {sku: 'PRD-812', name: 'Control Module M4', price: '¥ 89,900'},
-        {sku: 'PRD-813', name: 'Hydraulic Pump P9', price: '¥ 215,000'},
-        {sku: 'PRD-814', name: 'Thermal Regulator T3', price: '¥ 56,200'},
-        {sku: 'PRD-815', name: 'Logic Board B7', price: '¥ 41,000'}
-    ];
-
-    let isParsing = false;
-
-    function log(msg, type = 'info') {
-        const t = document.getElementById('terminal');
-        const p = document.createElement('p');
-        p.className = 'log-' + type;
-        p.innerHTML = `<span class="log-time">${timeStr()}</span>${msg}`;
-        t.appendChild(p);
-        t.scrollTop = t.scrollHeight;
-    }
-
-    function startParsing() {
-        if (isParsing) return;
-        isParsing = true;
-        const btn = document.getElementById('startParseBtn');
-        const progress = document.getElementById('progressFill');
-        const table = document.getElementById('dataTable');
-        
-        btn.disabled = true;
-        btn.textContent = 'Processing...';
-        table.innerHTML = '';
-        progress.style.width = '0%';
-
-        log('[INIT] Establishing secure connection to endpoints...', 'sys');
-        log('[AUTH] Validating API tokens...', 'sys');
-
-        let i = 0;
-        const interval = setInterval(() => {
-            const pct = Math.round(((i + 1) / products.length) * 100);
-            progress.style.width = pct + '%';
-
-            if (i < products.length) {
-                const p = products[i];
-                log(`[DATA] Record fetched: ${p.sku} - ${p.name}`, 'ok');
-                
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="font-family:var(--font-mono); color:var(--text-muted); font-size:12px;">${p.sku}</td>
-                    <td style="font-weight:500;">${p.name}</td>
-                    <td class="price">${p.price}</td>
-                    <td><span class="status-pill">Verified</span></td>
-                `;
-                table.appendChild(tr);
-                i++;
-            } else {
-                clearInterval(interval);
-                log('[END] Data extraction complete. 0 errors.', 'ok');
-                btn.disabled = false;
-                btn.textContent = 'Initiate Data Extraction';
-                isParsing = false;
+    <!-- Подключение Three.js через CDN -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
             }
-        }, 700);
-    }
+        }
+    </script>
 
-    let isAutoRunning = false;
-    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-    async function runAutomation() {
-        if (isAutoRunning) return;
-        isAutoRunning = true;
-        const btn = document.getElementById('runAutoBtn');
-        const logBox = document.getElementById('autoLog');
-        const nodes = ['nc', 'n1', 'n2', 'n3', 'n4'].map(id => document.getElementById(id));
-        const paths = ['p1', 'p2', 'p3', 'p4'].map(id => document.getElementById(id));
+        // --- Настройка сцены ---
+        const scene = new THREE.Scene();
+        // Туман для глубины
+        scene.fog = new THREE.FogExp2(0x020205, 0.03);
 
-        btn.disabled = true;
-        btn.textContent = 'Executing...';
-        nodes.forEach(n => n.classList.remove('active', 'done'));
-        paths.forEach(p => p.classList.remove('active'));
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 30);
 
-        logBox.textContent = 'Triggering workflow execution...';
-        document.getElementById('nc').classList.add('active');
-        await sleep(600);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        logBox.textContent = 'Routing payloads to service nodes...';
-        nodes.slice(1).forEach(n => n.classList.add('active'));
-        paths.forEach(p => p.classList.add('active'));
-        await sleep(1200);
+        // --- Постобработка (Свечение / Bloom) ---
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0.2;
+        bloomPass.strength = 1.2; // Сила свечения
+        bloomPass.radius = 0.5;
 
-        nodes.forEach(n => { n.classList.remove('active'); n.classList.add('done'); });
-        paths.forEach(p => p.classList.remove('active'));
-        logBox.textContent = 'Workflow completed successfully.';
-        
-        await sleep(1500);
-        btn.disabled = false;
-        btn.textContent = 'Execute Workflow';
-        logBox.textContent = 'Node graph ready.';
-        nodes.forEach(n => n.classList.remove('done'));
-        isAutoRunning = false;
-    }
-</script>
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // --- Свет ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0x00f0ff, 200, 100);
+        pointLight1.position.set(10, 10, 10);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0xb73cff, 200, 100);
+        pointLight2.position.set(-10, -10, 10);
+        scene.add(pointLight2);
+
+        // --- Создание 3D Объектов ---
+        const group = new THREE.Group();
+        scene.add(group);
+
+        // Центральное ядро (Икосаэдр)
+        const coreGeo = new THREE.IcosahedronGeometry(4, 2);
+        const coreMat = new THREE.MeshStandardMaterial({
+            color: 0x0a0a0a,
+            emissive: 0x00f0ff,
+            emissiveIntensity: 0.8,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.8
+        });
+        const core = new THREE.Mesh(coreGeo, coreMat);
+        group.add(core);
+
+        // Внутренняя сфера (сплошная, светящаяся)
+        const innerGeo = new THREE.SphereGeometry(3.8, 32, 32);
+        const innerMat = new THREE.MeshBasicMaterial({
+            color: 0x00f0ff,
+            transparent: true,
+            opacity: 0.1,
+            blending: THREE.AdditiveBlending
+        });
+        const innerSphere = new THREE.Mesh(innerGeo, innerMat);
+        group.add(innerSphere);
+
+        // Кольца
+        const rings = [];
+        const ringCount = 3;
+        for (let i = 0; i < ringCount; i++) {
+            const radius = 6 + i * 2.5;
+            const tube = 0.05 + i * 0.02;
+            const ringGeo = new THREE.TorusGeometry(radius, tube, 16, 100);
+            
+            const ringMat = new THREE.MeshStandardMaterial({
+                color: i === 0 ? 0x00f0ff : (i === 1 ? 0xb73cff : 0xff3366),
+                emissive: i === 0 ? 0x00f0ff : (i === 1 ? 0xb73cff : 0xff3366),
+                emissiveIntensity: 2,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            
+            // Случайный наклон колец
+            ring.rotation.x = Math.PI / 2 + (Math.random() - 0.5) * 0.5;
+            ring.rotation.y = (Math.random() - 0.5) * 0.5;
+            
+            group.add(ring);
+            rings.push(ring);
+        }
+
+        // Частицы на фоне
+        const particlesGeo = new THREE.BufferGeometry();
+        const particlesCount = 1000;
+        const posArray = new Float32Array(particlesCount * 3);
+        for(let i = 0; i < particlesCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 100;
+        }
+        particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particlesMat = new THREE.PointsMaterial({
+            size: 0.1,
+            color: 0x00f0ff,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
+        });
+        const particlesMesh = new THREE.Points(particlesGeo, particlesMat);
+        scene.add(particlesMesh);
+
+        // --- Интерактивность (Мышь / Палец) ---
+        let mouseX = 0;
+        let mouseY = 0;
+        let targetX = 0;
+        let targetY = 0;
+
+        const windowHalfX = window.innerWidth / 2;
+        const windowHalfY = window.innerHeight / 2;
+
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX - windowHalfX);
+            mouseY = (event.clientY - windowHalfY);
+        });
+
+        document.addEventListener('touchmove', (event) => {
+            if(event.touches.length > 0) {
+                mouseX = (event.touches[0].clientX - windowHalfX);
+                mouseY = (event.touches[0].clientY - windowHalfY);
+            }
+        });
+
+        // --- Анимация ---
+        const clock = new THREE.Clock();
+        let pulseEffect = 0;
+
+        // Функция для кнопки (вызывается из HTML)
+        window.triggerPulse = () => {
+            pulseEffect = 5; // Запускает резкое расширение
+            // Меняем цвета
+            pointLight1.color.setHex(0xff3366);
+            pointLight2.color.setHex(0x00f0ff);
+            setTimeout(() => {
+                pointLight1.color.setHex(0x00f0ff);
+                pointLight2.color.setHex(0xb73cff);
+            }, 1000);
+        };
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = clock.getElapsedTime();
+
+            // Плавное движение камеры за мышью
+            targetX = mouseX * 0.001;
+            targetY = mouseY * 0.001;
+            
+            group.rotation.y += 0.002; // Автовращение
+            group.rotation.y += 0.05 * (targetX - group.rotation.y); // Следование за мышью
+            group.rotation.x += 0.05 * (targetY - group.rotation.x);
+
+            // Вращение колец с разной скоростью
+            rings.forEach((ring, index) => {
+                ring.rotation.z += 0.005 * (index % 2 === 0 ? 1 : -1);
+                ring.rotation.y += 0.002 * (index + 1);
+            });
+
+            // Пульсация ядра
+            const scale = 1 + Math.sin(time * 2) * 0.02 + pulseEffect;
+            core.scale.set(scale, scale, scale);
+            innerSphere.scale.set(scale, scale, scale);
+
+            // Затухание пульса
+            if (pulseEffect > 0) {
+                pulseEffect -= 0.05;
+            }
+
+            // Вращение частиц
+            particlesMesh.rotation.y = time * 0.02;
+
+            // Рендер через composer (для эффекта свечения)
+            composer.render();
+        }
+
+        // Обработка ресайза
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Запуск
+        animate();
+
+        // Скрываем лоадер
+        setTimeout(() => {
+            const loader = document.getElementById('loader');
+            loader.style.opacity = '0';
+            setTimeout(() => loader.remove(), 1000);
+        }, 1500);
+
+    </script>
 </body>
 </html>
