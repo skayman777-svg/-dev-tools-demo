@@ -3,291 +3,227 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dev Tools — Парсинг и Автоматизация</title>
+<title>DevTools — Enterprise Analytics & Automation</title>
 <style>
     :root {
-        --bg: #0a0b10;
-        --panel: #13141f;
-        --border: #232538;
-        --text: #e2e4f0;
-        --muted: #7b7f9e;
-        --accent: #00f0ff;
-        --purple: #b73cff;
-        --green: #00ff66;
-        --red: #ff3366;
+        --bg-base: #08090d;
+        --bg-surface: rgba(18, 20, 32, 0.7);
+        --bg-surface-hover: rgba(26, 29, 46, 0.8);
+        --border-light: rgba(255, 255, 255, 0.06);
+        --border-highlight: rgba(0, 240, 255, 0.25);
+        --text-primary: #f0f2f8;
+        --text-secondary: #8a8fad;
+        --text-muted: #535775;
+        --accent-cyan: #00d2ff;
+        --accent-purple: #9d4edd;
+        --accent-green: #00e676;
+        --accent-red: #ff3b5c;
+        --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --font-mono: "SF Mono", "Fira Code", "Roboto Mono", monospace;
+        --radius-lg: 16px;
+        --radius-md: 10px;
+        --shadow-glow: 0 0 40px rgba(0, 210, 255, 0.08);
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        background: var(--bg);
-        color: var(--text);
+        font-family: var(--font-main);
+        background-color: var(--bg-base);
+        color: var(--text-primary);
         min-height: 100vh;
         display: flex;
         flex-direction: column;
+        -webkit-font-smoothing: antialiased;
+        overflow: hidden;
+        position: relative;
     }
 
-    /* Шапка с вкладками */
+    /* Фоновые неоновые пятна */
+    body::before, body::after {
+        content: ''; position: absolute; border-radius: 50%; filter: blur(100px); z-index: -1; opacity: 0.4;
+    }
+    body::before { background: var(--accent-purple); width: 600px; height: 600px; top: -200px; left: -200px; }
+    body::after { background: var(--accent-cyan); width: 500px; height: 500px; bottom: -150px; right: -100px; opacity: 0.2; }
+
+    /* Шапка */
     header {
-        background: var(--panel);
-        border-bottom: 1px solid var(--border);
-        padding: 0 24px;
+        background: rgba(8, 9, 13, 0.8);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border-light);
+        padding: 0 32px;
         display: flex;
         align-items: center;
-        gap: 32px;
-        height: 64px;
+        justify-content: space-between;
+        height: 72px;
+        position: relative;
+        z-index: 10;
     }
     .logo {
-        font-weight: 700;
-        font-size: 18px;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        font-weight: 600; font-size: 16px; letter-spacing: -0.5px;
+        display: flex; align-items: center; gap: 12px;
     }
-    .logo span { color: var(--accent); }
-    .tabs {
-        display: flex;
-        gap: 8px;
-        height: 100%;
-    }
+    .logo svg { width: 24px; height: 24px; fill: var(--accent-cyan); }
+    
+    .tabs { display: flex; gap: 4px; background: rgba(255,255,255,0.03); padding: 4px; border-radius: var(--radius-md); border: 1px solid var(--border-light); }
     .tab {
-        background: none;
-        border: none;
-        color: var(--muted);
-        font-size: 14px;
-        font-weight: 500;
-        padding: 0 16px;
-        cursor: pointer;
-        position: relative;
-        transition: color 0.2s;
+        background: none; border: none; color: var(--text-secondary);
+        font-size: 13px; font-weight: 500; padding: 8px 20px; border-radius: 6px;
+        cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .tab:hover { color: var(--text); }
-    .tab.active { color: #fff; }
-    .tab.active::after {
-        content: '';
-        position: absolute;
-        bottom: -1px;
-        left: 0;
-        width: 100%;
-        height: 2px;
-        background: var(--accent);
-        box-shadow: 0 0 10px var(--accent);
-    }
+    .tab:hover { color: var(--text-primary); background: rgba(255,255,255,0.04); }
+    .tab.active { background: rgba(0, 210, 255, 0.1); color: var(--accent-cyan); box-shadow: inset 0 0 0 1px rgba(0, 210, 255, 0.2); }
 
     /* Контент */
     main {
-        flex: 1;
-        padding: 24px;
-        max-width: 1200px;
-        margin: 0 auto;
-        width: 100%;
-        display: none;
+        flex: 1; padding: 32px; display: none; overflow-y: auto;
+        max-width: 1400px; margin: 0 auto; width: 100%;
     }
-    main.active { display: block; }
+    main.active { display: block; animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Вкладка 1: Парсинг */
-    .parser-layout {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 24px;
-        height: calc(100vh - 140px);
-    }
-    @media (max-width: 768px) { .parser-layout { grid-template-columns: 1fr; height: auto; } }
-    
+    /* Сетка парсера */
+    .parser-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px; height: calc(100vh - 160px); }
+    @media (max-width: 900px) { .parser-grid { grid-template-columns: 1fr; height: auto; } }
+
+    /* Панели */
     .panel {
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
+        background: var(--bg-surface);
+        backdrop-filter: blur(24px);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-lg);
+        display: flex; flex-direction: column; overflow: hidden;
+        box-shadow: var(--shadow-glow);
     }
-    .panel-head {
-        padding: 12px 16px;
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--muted);
+    .panel-header {
+        padding: 16px 20px; border-bottom: 1px solid var(--border-light);
+        display: flex; justify-content: space-between; align-items: center;
+        font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary);
     }
-    
+    .panel-header .badge { background: rgba(0, 230, 118, 0.1); color: var(--accent-green); padding: 4px 10px; border-radius: 20px; font-size: 10px; border: 1px solid rgba(0, 230, 118, 0.2); }
+
     /* Терминал */
     .terminal {
-        flex: 1;
-        padding: 16px;
-        font-family: 'Courier New', monospace;
-        font-size: 13px;
-        line-height: 1.6;
-        overflow-y: auto;
-        color: #a8b3cf;
+        flex: 1; padding: 20px; font-family: var(--font-mono); font-size: 13px;
+        line-height: 1.7; overflow-y: auto; color: #a8b2d1;
+        background: rgba(0,0,0,0.2);
     }
-    .terminal p { margin-bottom: 4px; }
-    .log-ok { color: var(--green); }
-    .log-info { color: var(--accent); }
-    .log-warn { color: #ffcc00; }
+    .terminal p { margin-bottom: 6px; display: flex; gap: 8px; }
+    .log-time { color: var(--text-muted); font-size: 11px; }
+    .log-ok { color: var(--accent-green); }
+    .log-info { color: var(--accent-cyan); }
+    .log-sys { color: var(--accent-purple); }
 
-    /* Кнопка и прогресс */
+    /* Контролы */
     .controls {
-        padding: 16px;
-        border-top: 1px solid var(--border);
-        display: flex;
-        gap: 12px;
-        align-items: center;
+        padding: 20px; border-top: 1px solid var(--border-light);
+        background: rgba(0,0,0,0.1);
     }
+    .progress-track { height: 4px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; margin-bottom: 16px; }
+    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan)); transition: width 0.3s ease; }
+    
     .btn {
-        background: var(--accent);
-        color: #000;
-        border: none;
-        padding: 10px 24px;
-        border-radius: 6px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: opacity 0.2s;
+        background: var(--text-primary); color: var(--bg-base);
+        border: none; padding: 12px 24px; border-radius: 8px;
+        font-weight: 600; font-size: 13px; cursor: pointer; width: 100%;
+        transition: all 0.2s ease;
     }
-    .btn:hover { opacity: 0.8; }
-    .btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
-    .progress-bar {
-        flex: 1;
-        height: 8px;
-        background: var(--border);
-        border-radius: 4px;
-        overflow: hidden;
-    }
-    .progress-fill {
-        height: 100%;
-        width: 0%;
-        background: var(--accent);
-        transition: width 0.1s linear;
-        box-shadow: 0 0 10px var(--accent);
-    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(255,255,255,0.15); }
+    .btn:disabled { background: rgba(255,255,255,0.1); color: var(--text-muted); cursor: not-allowed; transform: none; box-shadow: none; }
 
     /* Таблица */
-    .table-wrap { flex: 1; overflow-y: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
-    th { color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .table-container { flex: 1; overflow-y: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { position: sticky; top: 0; background: rgba(18, 20, 32, 0.95); backdrop-filter: blur(10px); z-index: 2; padding: 14px 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); border-bottom: 1px solid var(--border-light); }
+    td { padding: 16px 20px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s; }
     tr:hover td { background: rgba(255,255,255,0.02); }
-    .status { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; background: rgba(0, 255, 102, 0.1); color: var(--green); }
+    .price { font-family: var(--font-mono); color: var(--accent-cyan); }
+    .status-pill { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; background: rgba(0, 230, 118, 0.08); color: var(--accent-green); border: 1px solid rgba(0, 230, 118, 0.15); }
 
-    /* Вкладка 2: Автоматизация */
-    .automation-canvas {
-        position: relative;
-        height: calc(100vh - 140px);
-        background: radial-gradient(circle at center, #1a1c2e 0%, #0a0b10 100%);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    /* Автоматизация */
+    .canvas-container {
+        position: relative; height: calc(100vh - 160px); border-radius: var(--radius-lg);
+        background: radial-gradient(circle at 50% 50%, rgba(30, 33, 50, 0.5) 0%, transparent 70%);
+        border: 1px solid var(--border-light); overflow: hidden;
     }
+    .canvas-grid { position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px); background-size: 24px 24px; opacity: 0.5; pointer-events: none; }
+    
+    svg.connections { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+    path.conn { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 2; transition: stroke 0.3s; }
+    path.conn.active { stroke: var(--accent-cyan); stroke-dasharray: 8 8; animation: flow 1s linear infinite; }
+    @keyframes flow { to { stroke-dashoffset: -16; } }
+
     .node {
-        position: absolute;
-        width: 120px;
-        height: 120px;
-        background: var(--panel);
-        border: 2px solid var(--border);
-        border-radius: 16px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        color: var(--muted);
-        font-size: 12px;
-        font-weight: 600;
-        transition: all 0.3s;
-        z-index: 2;
+        position: absolute; z-index: 3; transform: translate(-50%, -50%);
+        width: 140px; background: var(--bg-surface); border: 1px solid var(--border-light);
+        border-radius: var(--radius-md); padding: 16px; text-align: center;
+        backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0,0,0,0.4); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .node.active { border-color: var(--purple); color: #fff; box-shadow: 0 0 20px rgba(183, 60, 255, 0.4); }
-    .node.done { border-color: var(--green); color: #fff; box-shadow: 0 0 20px rgba(0, 255, 102, 0.4); }
-    
-    .node-icon { font-size: 28px; }
-    
-    /* Позиции нод */
-    .node-1 { top: 20%; left: 15%; }
-    .node-2 { top: 20%; right: 15%; }
-    .node-3 { bottom: 20%; left: 15%; }
-    .node-4 { bottom: 20%; right: 15%; }
-    .node-center { top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100px; height: 100px; border-color: var(--accent); color: var(--accent); }
-    .node-center.active { border-color: var(--accent); box-shadow: 0 0 30px rgba(0, 240, 255, 0.6); }
+    .node-icon { width: 32px; height: 32px; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: rgba(255,255,255,0.05); color: var(--text-secondary); }
+    .node-title { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+    .node-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
 
-    /* SVG линии */
-    svg.connections {
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        z-index: 1;
-        pointer-events: none;
-    }
-    path { fill: none; stroke: var(--border); stroke-width: 2; }
-    path.active { stroke: var(--accent); stroke-dasharray: 10; animation: dash 1s linear infinite; }
-    @keyframes dash { to { stroke-dashoffset: -20; } }
+    .node.active { border-color: var(--accent-purple); box-shadow: 0 0 30px rgba(157, 78, 221, 0.2); }
+    .node.active .node-icon { background: rgba(157, 78, 221, 0.1); color: var(--accent-purple); }
+    .node.done { border-color: var(--accent-green); box-shadow: 0 0 20px rgba(0, 230, 118, 0.1); }
+    .node.done .node-icon { background: rgba(0, 230, 118, 0.1); color: var(--accent-green); }
 
-    .run-btn-container {
-        position: absolute;
-        bottom: 24px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 10;
+    .node-center { width: 160px; padding: 20px; border-color: rgba(0, 210, 255, 0.3); }
+    .node-center .node-icon { background: rgba(0, 210, 255, 0.1); color: var(--accent-cyan); }
+    .node-center.active { border-color: var(--accent-cyan); box-shadow: 0 0 40px rgba(0, 210, 255, 0.25); }
+
+    .floating-controls { position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; gap: 16px; align-items: center; }
+    .auto-log {
+        position: absolute; top: 24px; left: 24px; background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(10px); border: 1px solid var(--border-light);
+        padding: 10px 16px; border-radius: 8px; font-family: var(--font-mono);
+        font-size: 12px; color: var(--accent-cyan); z-index: 10;
     }
-    .automation-log {
-        position: absolute;
-        top: 24px; left: 24px;
-        background: rgba(19, 20, 31, 0.8);
-        backdrop-filter: blur(8px);
-        border: 1px solid var(--border);
-        padding: 12px 16px;
-        border-radius: 8px;
-        font-family: monospace;
-        font-size: 12px;
-        color: var(--accent);
-        z-index: 10;
-    }
+
+    /* Специфичные размеры узлов */
+    .pos-tl { top: 20%; left: 20%; } .pos-tr { top: 20%; left: 80%; }
+    .pos-bl { top: 80%; left: 20%; } .pos-br { top: 80%; left: 80%; }
+    .pos-center { top: 50%; left: 50%; }
 </style>
 </head>
 <body>
 
 <header>
-    <div class="logo">⚡ <span>Dev</span>Tools</div>
+    <div class="logo">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        DevTools<span style="color:var(--text-muted); font-weight:400;">&nbsp;/ Analytics</span>
+    </div>
     <div class="tabs">
-        <button class="tab active" onclick="switchTab('parser')">Парсинг данных</button>
-        <button class="tab" onclick="switchTab('automation')">AI-Автоматизация</button>
+        <button class="tab active" onclick="switchTab('parser', this)">Data Pipeline</button>
+        <button class="tab" onclick="switchTab('automation', this)">AI Automation</button>
     </div>
 </header>
 
-<!-- ВКЛАДКА 1: ПАРСИНГ -->
 <main id="tab-parser" class="active">
-    <div class="parser-layout">
-        <!-- Левая панель: Терминал -->
+    <div class="parser-grid">
         <div class="panel">
-            <div class="panel-head">Терминал (Логи)</div>
+            <div class="panel-header">
+                <span>System Logs</span>
+                <span class="badge">Connected</span>
+            </div>
             <div class="terminal" id="terminal">
-                <p class="log-info">[SYS] Система готова к запуску...</p>
-                <p class="log-info">[SYS] Ожидание команды...</p>
+                <p class="log-sys"><span class="log-time">00:00:00</span>[SYS] Environment initialized.</p>
+                <p class="log-sys"><span class="log-time">00:00:01</span>[SYS] Awaiting execution command...</p>
             </div>
             <div class="controls">
-                <button class="btn" id="startParseBtn" onclick="startParsing()">Запустить парсинг</button>
-                <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+                <button class="btn" id="startParseBtn" onclick="startParsing()">Initiate Data Extraction</button>
             </div>
         </div>
 
-        <!-- Правая панель: Таблица -->
         <div class="panel">
-            <div class="panel-head">Собранные данные</div>
-            <div class="table-wrap">
+            <div class="panel-header"><span>Extracted Records</span></div>
+            <div class="table-container">
                 <table>
                     <thead>
-                        <tr>
-                            <th>Артикул</th>
-                            <th>Название</th>
-                            <th>Цена</th>
-                            <th>Статус</th>
-                        </tr>
+                        <tr><th>ID</th><th>Product Name</th><th>Valuation</th><th>Status</th></tr>
                     </thead>
                     <tbody id="dataTable">
-                        <tr><td colspan="4" style="text-align:center; color:var(--muted); padding:32px;">Данных пока нет</td></tr>
+                        <tr><td colspan="4" style="text-align:center; padding:48px; color:var(--text-muted); font-size:13px;">No data stream detected.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -295,63 +231,75 @@
     </div>
 </main>
 
-<!-- ВКЛАДКА 2: АВТОМАТИЗАЦИЯ -->
 <main id="tab-automation">
-    <div class="automation-canvas" id="canvas">
-        <!-- Лог -->
-        <div class="automation-log" id="autoLog">Ожидание запуска...</div>
+    <div class="canvas-container" id="canvas">
+        <div class="canvas-grid"></div>
+        <div class="auto-log" id="autoLog">Node graph ready.</div>
 
-        <!-- SVG Линии -->
         <svg class="connections">
-            <!-- От центра к нодам и обратно (упрощенно) -->
-            <path d="M 50% 50% L 15% 20%" id="p1" />
-            <path d="M 50% 50% L 85% 20%" id="p2" />
-            <path d="M 50% 50% L 15% 80%" id="p3" />
-            <path d="M 50% 50% L 85% 80%" id="p4" />
+            <path class="conn" id="p1" d="M 50% 50% Q 35% 35% 20% 20%" />
+            <path class="conn" id="p2" d="M 50% 50% Q 65% 35% 80% 20%" />
+            <path class="conn" id="p3" d="M 50% 50% Q 35% 65% 20% 80%" />
+            <path class="conn" id="p4" d="M 50% 50% Q 65% 65% 80% 80%" />
         </svg>
 
-        <!-- Ноды -->
-        <div class="node node-1" id="n1"><div class="node-icon">📥</div>CRM Данные</div>
-        <div class="node node-2" id="n2"><div class="node-icon">🤖</div>AI Обработка</div>
-        <div class="node node-3" id="n3"><div class="node-icon">📊</div>Google Таблицы</div>
-        <div class="node node-4" id="n4"><div class="node-icon">✈️</div>Telegram Bot</div>
-        <div class="node node-center" id="nc"><div class="node-icon">⚙️</div>n8n Core</div>
+        <div class="node pos-tl" id="n1">
+            <div class="node-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></div>
+            <div class="node-title">CRM Source</div>
+            <div class="node-sub">Webhook Trigger</div>
+        </div>
+        <div class="node pos-tr" id="n2">
+            <div class="node-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+            <div class="node-title">LLM Parser</div>
+            <div class="node-sub">GPT-4o Model</div>
+        </div>
+        <div class="node pos-bl" id="n3">
+            <div class="node-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+            <div class="node-title">Data Warehouse</div>
+            <div class="node-sub">Google Sheets API</div>
+        </div>
+        <div class="node pos-br" id="n4">
+            <div class="node-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></div>
+            <div class="node-title">Alerting Bot</div>
+            <div class="node-sub">Telegram Gateway</div>
+        </div>
+        <div class="node node-center pos-center" id="nc">
+            <div class="node-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+            <div class="node-title">n8n Engine</div>
+            <div class="node-sub">Orchestrator</div>
+        </div>
 
-        <!-- Кнопка -->
-        <div class="run-btn-container">
-            <button class="btn" id="runAutoBtn" onclick="runAutomation()">Запустить сценарий</button>
+        <div class="floating-controls">
+            <button class="btn" id="runAutoBtn" onclick="runAutomation()" style="width: auto; padding: 12px 32px; background: var(--accent-cyan); color: #000;">Execute Workflow</button>
         </div>
     </div>
 </main>
 
 <script>
-    // === ЛОГИКА ВКЛАДОК ===
-    function switchTab(tabId) {
+    function switchTab(tabId, el) {
         document.querySelectorAll('main').forEach(m => m.classList.remove('active'));
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        
         document.getElementById('tab-' + tabId).classList.add('active');
-        event.target.classList.add('active');
+        el.classList.add('active');
     }
 
-    // === ЛОГИКА ПАРСИНГА ===
-    let isParsing = false;
+    const timeStr = () => new Date().toISOString().slice(11, 19);
     const products = [
-        {sku: 'WB-101', name: 'Умный унитаз Brunen', price: '123 400 ₽'},
-        {sku: 'WB-102', name: 'Электронная крышка Daewon', price: '32 900 ₽'},
-        {sku: 'OZ-201', name: 'Смеситель Grohe', price: '18 500 ₽'},
-        {sku: 'WB-103', name: 'Инсталляция Geberit', price: '24 000 ₽'},
-        {sku: 'YM-301', name: 'Полотенцесушитель', price: '8 900 ₽'},
-        {sku: 'OZ-202', name: 'Раковина Cersanit', price: '12 300 ₽'},
-        {sku: 'WB-104', name: 'Душевая кабина', price: '56 700 ₽'},
-        {sku: 'YM-302', name: 'Зеркало с подсветкой', price: '7 400 ₽'}
+        {sku: 'PRD-810', name: 'Industrial Sensor X1', price: '¥ 124,000'},
+        {sku: 'PRD-811', name: 'Smart Valve V2', price: '¥ 34,500'},
+        {sku: 'PRD-812', name: 'Control Module M4', price: '¥ 89,900'},
+        {sku: 'PRD-813', name: 'Hydraulic Pump P9', price: '¥ 215,000'},
+        {sku: 'PRD-814', name: 'Thermal Regulator T3', price: '¥ 56,200'},
+        {sku: 'PRD-815', name: 'Logic Board B7', price: '¥ 41,000'}
     ];
+
+    let isParsing = false;
 
     function log(msg, type = 'info') {
         const t = document.getElementById('terminal');
         const p = document.createElement('p');
         p.className = 'log-' + type;
-        p.textContent = msg;
+        p.innerHTML = `<span class="log-time">${timeStr()}</span>${msg}`;
         t.appendChild(p);
         t.scrollTop = t.scrollHeight;
     }
@@ -359,95 +307,79 @@
     function startParsing() {
         if (isParsing) return;
         isParsing = true;
-        
         const btn = document.getElementById('startParseBtn');
         const progress = document.getElementById('progressFill');
         const table = document.getElementById('dataTable');
         
         btn.disabled = true;
-        btn.textContent = 'Парсинг...';
+        btn.textContent = 'Processing...';
         table.innerHTML = '';
         progress.style.width = '0%';
-        
-        log('[INFO] Инициализация парсера...', 'info');
-        log('[INFO] Подключение к маркетплейсам (WB, Ozon, Yandex)...', 'info');
 
-        let currentItem = 0;
-        
+        log('[INIT] Establishing secure connection to endpoints...', 'sys');
+        log('[AUTH] Validating API tokens...', 'sys');
+
+        let i = 0;
         const interval = setInterval(() => {
-            // Обновляем прогресс
-            const pct = Math.round(((currentItem + 1) / products.length) * 100);
+            const pct = Math.round(((i + 1) / products.length) * 100);
             progress.style.width = pct + '%';
 
-            // Пишем лог
-            if (currentItem < products.length) {
-                const p = products[currentItem];
-                log(`[OK] Получен товар: ${p.sku} - ${p.name}`, 'ok');
+            if (i < products.length) {
+                const p = products[i];
+                log(`[DATA] Record fetched: ${p.sku} - ${p.name}`, 'ok');
                 
-                // Добавляем строку в таблицу
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td style="color:var(--muted)">${p.sku}</td>
-                    <td>${p.name}</td>
-                    <td style="color:var(--accent)">${p.price}</td>
-                    <td><span class="status">Успешно</span></td>
+                    <td style="font-family:var(--font-mono); color:var(--text-muted); font-size:12px;">${p.sku}</td>
+                    <td style="font-weight:500;">${p.name}</td>
+                    <td class="price">${p.price}</td>
+                    <td><span class="status-pill">Verified</span></td>
                 `;
                 table.appendChild(tr);
-                
-                currentItem++;
+                i++;
             } else {
-                // Завершение
                 clearInterval(interval);
-                log('[SYS] Парсинг завершен. Все данные сохранены.', 'ok');
+                log('[END] Data extraction complete. 0 errors.', 'ok');
                 btn.disabled = false;
-                btn.textContent = 'Запустить снова';
+                btn.textContent = 'Initiate Data Extraction';
                 isParsing = false;
             }
-        }, 600); // Скорость появления строк (0.6 сек)
+        }, 700);
     }
 
-    // === ЛОГИКА АВТОМАТИЗАЦИИ ===
     let isAutoRunning = false;
-
-    function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
     async function runAutomation() {
         if (isAutoRunning) return;
         isAutoRunning = true;
-        
         const btn = document.getElementById('runAutoBtn');
         const logBox = document.getElementById('autoLog');
         const nodes = ['nc', 'n1', 'n2', 'n3', 'n4'].map(id => document.getElementById(id));
         const paths = ['p1', 'p2', 'p3', 'p4'].map(id => document.getElementById(id));
-        
-        // Сброс
+
         btn.disabled = true;
-        btn.textContent = 'Выполняется...';
-        nodes.forEach(n => n.className = n.className.replace(' active', '').replace(' done', ''));
+        btn.textContent = 'Executing...';
+        nodes.forEach(n => n.classList.remove('active', 'done'));
         paths.forEach(p => p.classList.remove('active'));
-        logBox.textContent = '🚀 Запуск рабочего процесса...';
-        
-        // 1. Ядро
+
+        logBox.textContent = 'Triggering workflow execution...';
         document.getElementById('nc').classList.add('active');
-        await sleep(800);
-        
-        // 2. Обработка (параллельно для визуального эффекта)
-        logBox.textContent = '⚙️ Ядро n8n распределяет задачи...';
-        nodes.forEach(n => n.classList.add('active'));
+        await sleep(600);
+
+        logBox.textContent = 'Routing payloads to service nodes...';
+        nodes.slice(1).forEach(n => n.classList.add('active'));
         paths.forEach(p => p.classList.add('active'));
-        await sleep(1500);
-        
-        // 3. Завершение
-        logBox.textContent = '✅ Все узлы выполнили скрипты успешно!';
+        await sleep(1200);
+
         nodes.forEach(n => { n.classList.remove('active'); n.classList.add('done'); });
         paths.forEach(p => p.classList.remove('active'));
+        logBox.textContent = 'Workflow completed successfully.';
         
-        await sleep(2000);
+        await sleep(1500);
         btn.disabled = false;
-        btn.textContent = 'Запустить сценарий';
-        logBox.textContent = 'Ожидание запуска...';
+        btn.textContent = 'Execute Workflow';
+        logBox.textContent = 'Node graph ready.';
         nodes.forEach(n => n.classList.remove('done'));
         isAutoRunning = false;
     }
